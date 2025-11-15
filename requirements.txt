@@ -1,0 +1,6 @@
+streamlit
+mistralai
+pillow
+fpdf
+PyPDF2
+python-dotenv
