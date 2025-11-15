@@ -101,31 +101,41 @@ def main_app():
         st.error("❌ Clé API Mistral non configurée! Ajoutez-la dans le fichier .env")
         st.stop()
     
-    # Upload d'image
-    st.markdown("### 📤 Étape 1: Chargez votre image")
+    # Upload d'image ou PDF
+    st.markdown("### 📤 Étape 1: Chargez votre fichier")
     uploaded_file = st.file_uploader(
-        "Glissez votre image ou diaporama ici",
-        type=['png', 'jpg', 'jpeg', 'webp'],
-        help="Formats acceptés: PNG, JPG, JPEG, WEBP"
+        "Glissez votre image ou PDF ici",
+        type=['png', 'jpg', 'jpeg', 'webp', 'pdf'],
+        help="Formats acceptés: PNG, JPG, JPEG, WEBP, PDF"
     )
     
     if uploaded_file:
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.markdown("#### 🖼️ Aperçu de l'image")
-            st.image(uploaded_file, use_container_width=True)
+            st.markdown("#### 🖼️ Aperçu du fichier")
+            
+            # Afficher selon le type de fichier
+            if uploaded_file.type == "application/pdf":
+                st.info("📄 Fichier PDF chargé")
+                st.write(f"**Nom:** {uploaded_file.name}")
+                st.write(f"**Taille:** {uploaded_file.size / 1024:.2f} KB")
+            else:
+                st.image(uploaded_file, use_container_width=True)
         
         with col2:
             st.markdown("#### ⚙️ Génération du cours")
             
             if st.button("🚀 Générer le cours", use_container_width=True, type="primary"):
                 try:
-                    with st.spinner("🔄 Analyse en cours... Cela peut prendre 30 secondes"):
+                    with st.spinner("🔄 Analyse en cours... Cela peut prendre 30-60 secondes"):
                         generator = CourseGenerator(api_key)
                         
-                        # Analyse de l'image
-                        course_text = generator.analyze_image(uploaded_file)
+                        # Analyse selon le type de fichier
+                        if uploaded_file.type == "application/pdf":
+                            course_text = generator.analyze_pdf(uploaded_file)
+                        else:
+                            course_text = generator.analyze_image(uploaded_file)
                         
                         # Génération du PDF
                         pdf_path = generator.generate_pdf(course_text, "cours_genere.pdf")

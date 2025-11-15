@@ -4,6 +4,7 @@ from mistralai import Mistral
 from fpdf import FPDF
 from PIL import Image
 import io
+import PyPDF2
 
 class CourseGenerator:
     def __init__(self, api_key):
@@ -18,7 +19,45 @@ class CourseGenerator:
         img.save(buffered, format="PNG")
         img_base64 = base64.b64encode(buffered.getvalue()).decode()
         
-        # Prompt pour Mistral
+        return self._generate_course_from_base64(img_base64)
+    
+    def analyze_pdf(self, pdf_file):
+        """Analyse un PDF et génère un cours détaillé"""
+        # Extraire le texte du PDF
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        text_content = ""
+        
+        for page in pdf_reader.pages:
+            text_content += page.extract_text() + "\n"
+        
+        # Limiter à 4000 caractères pour l'API
+        text_content = text_content[:4000]
+        
+        prompt = f"""Analyse ce contenu extrait d'un PDF et crée un cours structuré et pédagogique.
+
+Contenu du PDF:
+{text_content}
+
+Structure attendue:
+1. TITRE du cours
+2. INTRODUCTION (contexte)
+3. CONCEPTS CLÉS (liste à puces)
+4. EXPLICATIONS DÉTAILLÉES (paragraphes)
+5. EXEMPLES PRATIQUES
+6. POINTS À RETENIR
+
+Sois clair, pédagogique et exhaustif."""
+
+        # Appel API Mistral (texte uniquement)
+        response = self.client.chat.complete(
+            model="mistral-large-latest",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        return response.choices[0].message.content
+    
+    def _generate_course_from_base64(self, img_base64):
+        """Génère un cours depuis une image en base64"""
         prompt = """Analyse cette image et crée un cours structuré et pédagogique.
 
 Structure attendue:
